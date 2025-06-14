@@ -422,8 +422,11 @@
                 Object.values(leagueTeams).flat() : 
                 leagueTeams[league] || [];
 
+            // 팀 목록을 무작위로 섞기
+            const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+
             // 카드 생성
-            teams.forEach(team => {
+            shuffledTeams.forEach(team => {
                 const card = createCard(team);
                 cardGrid.appendChild(card);
                 cards.push(card);
