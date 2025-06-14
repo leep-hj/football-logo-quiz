@@ -289,6 +289,10 @@
             <div class="league-card not-started" data-league="Romania - SuperLiga">루마니아 리그</div>
             <div class="league-card not-started" data-league="Serbia - Super liga Srbije">세르비아 리그</div>
             <div class="league-card not-started" data-league="Bulgaria - efbet Liga">불가리아 리그</div>
+            <div class="league-card not-started" data-league="Korea - K League 1">K리그1</div>
+            <div class="league-card not-started" data-league="Korea - K League 2">K리그2</div>
+            <div class="league-card not-started" data-league="Korea - K3 League">K3리그</div>
+            <div class="league-card not-started" data-league="Korea - K4 League">K4리그</div>
         </div>
         <div id="cardGrid" class="card-grid" style="display: none;"></div>
     </div>
@@ -305,11 +309,16 @@
         // 리그별 팀 데이터 초기화
         async function initializeLeagueTeams() {
             try {
-                const response = await fetch('https://api.github.com/repos/luukhopman/football-logos/git/trees/master?recursive=1');
-                const data = await response.json();
+                // 기존 저장소 데이터 가져오기
+                const response1 = await fetch('https://api.github.com/repos/luukhopman/football-logos/git/trees/master?recursive=1');
+                const data1 = await response1.json();
                 
-                // 모든 팀 데이터를 리그별로 분류
-                data.tree
+                // 한국 리그 저장소 데이터 가져오기
+                const response2 = await fetch('https://api.github.com/repos/leep-hj/football-logos-kr/git/trees/main?recursive=1');
+                const data2 = await response2.json();
+                
+                // 기존 저장소의 팀 데이터 처리
+                data1.tree
                     .filter(item => item.path.startsWith('logos/') && item.path.endsWith('.png'))
                     .forEach(item => {
                         const pathParts = item.path.split('/');
@@ -318,6 +327,25 @@
                             const team = {
                                 name: pathParts[pathParts.length - 1].replace('.png', ''),
                                 image: `https://raw.githubusercontent.com/luukhopman/football-logos/master/${item.path}`
+                            };
+                            
+                            if (!leagueTeams[league]) {
+                                leagueTeams[league] = [];
+                            }
+                            leagueTeams[league].push(team);
+                        }
+                    });
+
+                // 한국 리그 저장소의 팀 데이터 처리
+                data2.tree
+                    .filter(item => item.path.startsWith('logos/') && item.path.endsWith('.svg'))
+                    .forEach(item => {
+                        const pathParts = item.path.split('/');
+                        if (pathParts.length >= 3) {
+                            const league = pathParts[1];
+                            const team = {
+                                name: pathParts[pathParts.length - 1].replace('.svg', ''),
+                                image: `https://raw.githubusercontent.com/leep-hj/football-logos-kr/main/${item.path}`
                             };
                             
                             if (!leagueTeams[league]) {
