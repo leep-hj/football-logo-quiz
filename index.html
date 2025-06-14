@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>축구팀 엠블럼 맞추기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .score {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .league-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .league-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .league-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: #ccc;
+        }
+
+        .league-card.not-started::after {
+            background-color: #ccc;
+        }
+
+        .league-card.in-progress::after {
+            background-color: #ffd700;
+        }
+
+        .league-card.completed::after {
+            background-color: #4CAF50;
+        }
+
+        .league-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .card-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .card-container {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 70px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            perspective: 1000px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .card-back img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+            filter: blur(10px);
+            transition: filter 0.3s ease;
+        }
+
+        .answer-buttons {
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        .answer-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            min-width: 80px;
+            white-space: nowrap;
+        }
+
+        .answer-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .answer-buttons button:active {
+            transform: translateY(0);
+        }
+
+        .correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .team-name {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: none;
+            z-index: 3;
+            text-align: center;
+            max-width: 90%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            word-wrap: break-word;
+            line-height: 1.3;
+        }
+
+        .card.correct-answer {
+            border: 3px solid #4CAF50;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .card.incorrect-answer {
+            border: 3px solid #f44336;
+            animation: incorrectPulse 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes incorrectPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-button">← 뒤로가기</button>
+            <div class="score">점수: 0/0</div>
+        </div>
+        <div id="leagueGrid" class="league-grid">
+            <div class="league-card not-started" data-league="all">통합 리그</div>
+            <div class="league-card not-started" data-league="England - Premier League">프리미어 리그</div>
+            <div class="league-card not-started" data-league="Spain - LaLiga">라 리가</div>
+            <div class="league-card not-started" data-league="Germany - Bundesliga">분데스리가</div>
+            <div class="league-card not-started" data-league="Italy - Serie A">세리에 A</div>
+            <div class="league-card not-started" data-league="France - Ligue 1">리그 1</div>
+            <div class="league-card not-started" data-league="Netherlands - Eredivisie">에레디비시</div>
+            <div class="league-card not-started" data-league="Portugal - Liga Portugal">포르투갈 리그</div>
+            <div class="league-card not-started" data-league="Belgium - Jupiler Pro League">벨기에 리그</div>
+            <div class="league-card not-started" data-league="Scotland - Scottish Premiership">스코틀랜드 리그</div>
+            <div class="league-card not-started" data-league="Turkey - Süper Lig">터키 리그</div>
+            <div class="league-card not-started" data-league="Greece - Super League 1">그리스 리그</div>
+            <div class="league-card not-started" data-league="Switzerland - Super League">스위스 리그</div>
+            <div class="league-card not-started" data-league="Austria - Bundesliga">오스트리아 리그</div>
+            <div class="league-card not-started" data-league="Denmark - Superliga">덴마크 리그</div>
+            <div class="league-card not-started" data-league="Sweden - Allsvenskan">스웨덴 리그</div>
+            <div class="league-card not-started" data-league="Norway - Eliteserien">노르웨이 리그</div>
+            <div class="league-card not-started" data-league="Poland - PKO BP Ekstraklasa">폴란드 리그</div>
+            <div class="league-card not-started" data-league="Ukraine - Premier Liga">우크라이나 리그</div>
+            <div class="league-card not-started" data-league="Russia - Premier Liga">러시아 리그</div>
+            <div class="league-card not-started" data-league="Croatia - SuperSport HNL">크로아티아 리그</div>
+            <div class="league-card not-started" data-league="Czech Republic - Chance Liga">체코 리그</div>
+            <div class="league-card not-started" data-league="Hungary - Nemzeti Bajnokság">헝가리 리그</div>
+            <div class="league-card not-started" data-league="Romania - SuperLiga">루마니아 리그</div>
+            <div class="league-card not-started" data-league="Serbia - Super liga Srbije">세르비아 리그</div>
+            <div class="league-card not-started" data-league="Bulgaria - efbet Liga">불가리아 리그</div>
+        </div>
+        <div id="cardGrid" class="card-grid" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentLeague = '';
+        let cards = [];
+        let correctAnswers = 0;
+        let totalCards = 0;
+        let gameScore = { correct: 0, total: 0 };
+        let leagueStates = {};
+        let leagueTeams = {};
+
+        // 리그별 팀 데이터 초기화
+        async function initializeLeagueTeams() {
+            try {
+                const response = await fetch('https://api.github.com/repos/luukhopman/football-logos/git/trees/master?recursive=1');
+                const data = await response.json();
+                
+                // 모든 팀 데이터를 리그별로 분류
+                data.tree
+                    .filter(item => item.path.startsWith('logos/') && item.path.endsWith('.png'))
+                    .forEach(item => {
+                        const pathParts = item.path.split('/');
+                        if (pathParts.length >= 3) {
+                            const league = pathParts[1];
+                            const team = {
+                                name: pathParts[pathParts.length - 1].replace('.png', ''),
+                                image: `https://raw.githubusercontent.com/luukhopman/football-logos/master/${item.path}`
+                            };
+                            
+                            if (!leagueTeams[league]) {
+                                leagueTeams[league] = [];
+                            }
+                            leagueTeams[league].push(team);
+                        }
+                    });
+
+                // 모든 리그의 팀을 하나로 합치기
+                leagueTeams['all'] = Object.values(leagueTeams).flat();
+                
+                // 각 리그의 팀 목록을 무작위로 섞기
+                Object.keys(leagueTeams).forEach(league => {
+                    leagueTeams[league].sort(() => Math.random() - 0.5);
+                });
+
+            } catch (error) {
+                console.error('Error initializing league teams:', error);
+                alert('팀 데이터를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 페이지 로드 시 팀 데이터 초기화
+        initializeLeagueTeams();
+
+        // 리그 선택 이벤트
+        document.querySelectorAll('.league-card').forEach(card => {
+            card.addEventListener('click', () => {
+                currentLeague = card.dataset.league;
+                document.getElementById('leagueGrid').style.display = 'none';
+                document.getElementById('cardGrid').style.display = 'grid';
+                document.querySelector('.back-button').style.display = 'block';
+                loadCards(currentLeague);
+                
+                // 리그 상태 업데이트
+                if (!leagueStates[currentLeague]) {
+                    leagueStates[currentLeague] = 'in-progress';
+                    card.classList.remove('not-started');
+                    card.classList.add('in-progress');
+                }
+            });
+        });
+
+        // 뒤로가기 버튼 이벤트
+        document.querySelector('.back-button').addEventListener('click', () => {
+            document.getElementById('leagueGrid').style.display = 'grid';
+            document.getElementById('cardGrid').style.display = 'none';
+            document.querySelector('.back-button').style.display = 'none';
+            updateScore();
+
+            // 리그 상태 업데이트
+            if (leagueStates[currentLeague] === 'in-progress') {
+                const leagueCard = document.querySelector(`[data-league="${currentLeague}"]`);
+                if (gameScore.correct === totalCards && totalCards > 0) {
+                    leagueStates[currentLeague] = 'completed';
+                    leagueCard.classList.remove('in-progress');
+                    leagueCard.classList.add('completed');
+                }
+            }
+        });
+
+        // 카드 로드 함수
+        async function loadCards(league) {
+            const cardGrid = document.getElementById('cardGrid');
+            cardGrid.innerHTML = '';
+            cards = [];
+            correctAnswers = 0;
+            totalCards = 0;
+            gameScore = { correct: 0, total: 0 };
+
+            // 리그별 팀 데이터 로드
+            const teams = league === 'all' ? 
+                Object.values(leagueTeams).flat() : 
+                leagueTeams[league] || [];
+
+            // 카드 생성
+            teams.forEach(team => {
+                const card = createCard(team);
+                cardGrid.appendChild(card);
+                cards.push(card);
+                totalCards++;
+            });
+
+            updateScore();
+        }
+
+        // 카드 생성 함수
+        function createCard(team) {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container';
+            
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            const cardInner = document.createElement('div');
+            cardInner.className = 'card-inner';
+            
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-front';
+            cardFront.textContent = '?';
+            
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-back';
+            
+            const img = document.createElement('img');
+            img.src = team.image;
+            img.alt = team.name;
+            
+            const teamName = document.createElement('div');
+            teamName.className = 'team-name';
+            teamName.textContent = team.name;
+            
+            const answerButtons = document.createElement('div');
+            answerButtons.className = 'answer-buttons';
+            answerButtons.innerHTML = `
+                <button class="correct">정답</button>
+                <button class="incorrect">오답</button>
+            `;
+            
+            cardBack.appendChild(img);
+            cardBack.appendChild(teamName);
+            cardInner.appendChild(cardFront);
+            cardInner.appendChild(cardBack);
+            card.appendChild(cardInner);
+            cardContainer.appendChild(card);
+            cardContainer.appendChild(answerButtons);
+
+            let clickCount = 0;
+            card.addEventListener('click', () => {
+                if (!card.classList.contains('flipped')) {
+                    card.classList.add('flipped');
+                    clickCount = 1;
+                    answerButtons.style.display = 'flex';
+                } else {
+                    clickCount++;
+                    if (clickCount === 2) {
+                        img.style.filter = 'blur(5px)';
+                    } else if (clickCount === 3) {
+                        img.style.filter = 'blur(2px)';
+                    } else if (clickCount === 4) {
+                        img.style.filter = 'none';
+                    }
+                }
+            });
+
+            answerButtons.querySelector('.correct').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const wasCorrect = card.classList.contains('correct-answer');
+                const wasIncorrect = card.classList.contains('incorrect-answer');
+                
+                // 이전 상태 제거
+                if (wasCorrect) {
+                    gameScore.correct--;
+                } else if (wasIncorrect) {
+                    gameScore.total--;
+                }
+                
+                // 새로운 상태 적용
+                card.classList.remove('incorrect-answer');
+                card.classList.add('correct-answer');
+                gameScore.correct++;
+                if (!wasCorrect && !wasIncorrect) {
+                    gameScore.total++;
+                }
+                
+                teamName.style.display = 'block';
+                updateScore();
+            });
+
+            answerButtons.querySelector('.incorrect').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const wasCorrect = card.classList.contains('correct-answer');
+                const wasIncorrect = card.classList.contains('incorrect-answer');
+                
+                // 이전 상태 제거
+                if (wasCorrect) {
+                    gameScore.correct--;
+                } else if (wasIncorrect) {
+                    gameScore.total--;
+                }
+                
+                // 새로운 상태 적용
+                card.classList.remove('correct-answer');
+                card.classList.add('incorrect-answer');
+                if (!wasCorrect && !wasIncorrect) {
+                    gameScore.total++;
+                }
+                
+                teamName.style.display = 'block';
+                updateScore();
+            });
+
+            return cardContainer;
+        }
+
+        // 점수 업데이트 함수
+        function updateScore() {
+            const scoreElement = document.querySelector('.score');
+            scoreElement.textContent = `점수: ${gameScore.correct}/${totalCards}`;
+        }
+
+        // 게임 리셋 함수
+        function resetGame() {
+            correctAnswers = 0;
+            totalCards = 0;
+            gameScore = { correct: 0, total: 0 };
+            updateScore();
+        }
+    </script>
+</body>
+</html> 
